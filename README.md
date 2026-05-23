@@ -1,0 +1,1 @@
+A deep learning and computer vision framework for South African Banknote (ZAR) detection. Built with Flask, application processes uploaded currency scans through custom preprocessing, region segmentation, and feature extraction stages to accurately classify denominations and verify note authenticity in real time.
