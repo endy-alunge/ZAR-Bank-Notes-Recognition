@@ -1,9 +1,9 @@
 # main.py
 import cv2
 import numpy as np
-from src.preprocessing import BankNotePreprocessor, BankNoteSegmenter
-from src.feature_extraction import BankNoteFeatureExtractor
-from src.classification import BankNoteClassifier
+from backend.preprocessing import BankNotePreprocessor, BankNoteSegmenter
+from backend.features import BankNoteFeatureExtractor
+from backend.classification import BankNoteClassifier
 import os
 import pickle
 

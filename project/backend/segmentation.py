@@ -1,4 +1,7 @@
 # src/preprocessing.py (continued)
+import cv2
+import numpy as np
+
 class BankNoteSegmenter:
     def __init__(self, preprocessor):
         self.preprocessor = preprocessor

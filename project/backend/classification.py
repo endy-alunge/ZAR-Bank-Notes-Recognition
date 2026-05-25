@@ -1,4 +1,5 @@
 # src/classification.py
+import cv2
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
