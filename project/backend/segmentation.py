@@ -1,86 +1,75 @@
-# src/preprocessing.py (continued)
 import cv2
 import numpy as np
+from typing import List, Tuple, Optional
 
-class BankNoteSegmenter:
-    def __init__(self, preprocessor):
-        self.preprocessor = preprocessor
+
+class ImageSegmenter:
+    """Handles banknote segmentation from images"""
     
-    def edge_detection(self, image, method='canny', low_thresh=50, high_thresh=150):
-        """
-        Edge detection methods: 'canny', 'sobel', 'laplacian'
-        """
-        if method == 'canny':
-            edges = cv2.Canny(image, low_thresh, high_thresh)
-        elif method == 'sobel':
-            sobelx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
-            sobely = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
-            edges = cv2.magnitude(sobelx, sobely)
-            edges = np.uint8(np.clip(edges, 0, 255))
-        elif method == 'laplacian':
-            edges = cv2.Laplacian(image, cv2.CV_64F)
-            edges = np.uint8(np.abs(edges))
-        
-        return edges
+    def __init__(self):
+        self.methods_compared = []
     
-    def morphological_operations(self, binary_image, operation='close', kernel_size=5):
-        """
-        Morphological operations: 'erode', 'dilate', 'open', 'close'
-        """
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
-        
-        if operation == 'erode':
-            return cv2.erode(binary_image, kernel, iterations=1)
-        elif operation == 'dilate':
-            return cv2.dilate(binary_image, kernel, iterations=1)
-        elif operation == 'open':
-            return cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
-        elif operation == 'close':
-            return cv2.morphologyEx(binary_image, cv2.MORPH_CLOSE, kernel)
+    def find_contours(self, image: np.ndarray) -> List[np.ndarray]:
+        """Find contours in binary image"""
+        contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        return contours
     
-    def contour_segmentation(self, image, min_area=5000):
-        """Extract main banknote region using contour detection"""
-        # Preprocess
-        gray = self.preprocessor.to_grayscale(image)
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        edges = self.edge_detection(blurred, method='canny')
-        
-        # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # Get largest contour (assumed to be banknote)
-        if contours:
-            largest_contour = max(contours, key=cv2.contourArea)
-            if cv2.contourArea(largest_contour) > min_area:
-                # Get bounding rectangle
-                x, y, w, h = cv2.boundingRect(largest_contour)
-                segmented = image[y:y+h, x:x+w]
-                
-                # Visualize
-                result = image.copy()
-                cv2.drawContours(result, [largest_contour], -1, (0, 255, 0), 2)
-                
-                return segmented, result, largest_contour
-        
-        return image, image, None
+    def get_largest_contour(self, contours: List[np.ndarray]) -> Optional[np.ndarray]:
+        """Get the largest contour by area"""
+        if not contours:
+            return None
+        return max(contours, key=cv2.contourArea)
     
-    def grabcut_segmentation(self, image):
+    def get_bounding_rect(self, contour: np.ndarray) -> Tuple[int, int, int, int]:
+        """Get bounding rectangle of contour"""
+        return cv2.boundingRect(contour)
+    
+    def segment_using_otsu(self, image: np.ndarray) -> np.ndarray:
+        """Segment using Otsu's thresholding"""
+        _, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        return binary
+    
+    def segment_using_adaptive_threshold(self, image: np.ndarray) -> np.ndarray:
+        """Segment using adaptive thresholding"""
+        binary = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                      cv2.THRESH_BINARY_INV, 11, 2)
+        return binary
+    
+    def extract_banknote(self, image: np.ndarray, binary_mask: np.ndarray) -> np.ndarray:
+        """Extract banknote region using mask"""
+        # Apply morphological operations to clean mask
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        
+        # Find largest contour
+        contours = self.find_contours(mask)
+        largest_contour = self.get_largest_contour(contours)
+        
+        if largest_contour is not None:
+            # Get bounding rectangle
+            x, y, w, h = self.get_bounding_rect(largest_contour)
+            # Extract banknote region
+            banknote = image[y:y+h, x:x+w]
+            return banknote
+        
+        return image
+    
+    def segmentation_pipeline(self, image: np.ndarray, method: str = 'otsu') -> np.ndarray:
         """
-        GrabCut segmentation for more precise extraction
-        Better for complex backgrounds
+        Complete segmentation pipeline
+        
+        Returns:
+            Segmented banknote image
         """
-        mask = np.zeros(image.shape[:2], np.uint8)
-        bgd_model = np.zeros((1, 65), np.float64)
-        fgd_model = np.zeros((1, 65), np.float64)
+        if method == 'otsu':
+            binary = self.segment_using_otsu(image)
+        elif method == 'adaptive':
+            binary = self.segment_using_adaptive_threshold(image)
+        else:
+            binary = self.segment_using_otsu(image)
         
-        # Initial rectangle (assume note is in center 70% of image)
-        h, w = image.shape[:2]
-        rect = (int(w*0.15), int(h*0.15), int(w*0.7), int(h*0.7))
+        # Extract banknote
+        banknote = self.extract_banknote(image, binary)
         
-        cv2.grabCut(image, mask, rect, bgd_model, fgd_model, 5, cv2.GC_INIT_WITH_RECT)
-        
-        # Create mask where 0 and 2 are background, 1 and 3 are foreground
-        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-        segmented = image * mask2[:, :, np.newaxis]
-        
-        return segmented
+        return banknote

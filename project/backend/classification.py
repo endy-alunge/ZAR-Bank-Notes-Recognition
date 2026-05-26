@@ -1,114 +1,151 @@
-# src/classification.py
-import cv2
 import numpy as np
+import pickle
+import os
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import classification_report, confusion_matrix
-import pickle
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+from typing import Dict, List, Tuple, Optional
 
-class BankNoteClassifier:
-    def __init__(self):
-        self.classifiers = {
-            'svm': SVC(kernel='rbf', C=10, gamma='scale', probability=True),
-            'random_forest': RandomForestClassifier(n_estimators=100, random_state=42),
-            'knn': KNeighborsClassifier(n_neighbors=5)
-        }
-        self.current_classifier = None
-        self.feature_extractor = None
-        
-        # Define classes (denominations)
-        self.classes = ['R10', 'R20', 'R50', 'R100', 'R200']
-        
-    def train(self, X, y, classifier_name='svm', test_size=0.2):
-        """Train classifier with cross-validation"""
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42, stratify=y
-        )
-        
-        clf = self.classifiers[classifier_name]
-        clf.fit(X_train, y_train)
-        
-        # Evaluate
-        y_pred = clf.predict(X_test)
-        accuracy = np.mean(y_pred == y_test)
-        
-        print(f"Accuracy: {accuracy:.4f}")
-        print("\nClassification Report:")
-        print(classification_report(y_test, y_pred, target_names=self.classes))
-        
-        # Cross-validation
-        cv_scores = cross_val_score(clf, X, y, cv=5)
-        print(f"Cross-validation scores: {cv_scores}")
-        print(f"Mean CV accuracy: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})")
-        
-        self.current_classifier = clf
-        return clf, accuracy
+
+class BanknoteClassifier:
+    """Handles classification of banknotes"""
     
-    def predict(self, features):
-        """Predict denomination"""
-        if self.current_classifier is None:
-            raise ValueError("Classifier not trained yet")
+    def __init__(self):
+        self.scaler = StandardScaler()
+        self.classifier = None
+        self.trained = False
+        self.denominations = ['R10', 'R20', 'R50', 'R100', 'R200']
+    
+    def train_classifier(self, X_train: np.ndarray, y_train: np.ndarray, 
+                        classifier_type: str = 'random_forest') -> object:
+        """
+        Train classifier with different algorithms
+        """
+        # Standardize features
+        X_train_scaled = self.scaler.fit_transform(X_train)
         
-        probs = self.current_classifier.predict_proba([features])[0]
-        predicted_idx = np.argmax(probs)
+        # Select classifier
+        if classifier_type == 'svm':
+            self.classifier = SVC(kernel='rbf', C=10, gamma='scale', 
+                                  probability=True, random_state=42)
+        elif classifier_type == 'random_forest':
+            self.classifier = RandomForestClassifier(n_estimators=100, 
+                                                     random_state=42)
+        else:
+            raise ValueError(f"Unknown classifier type: {classifier_type}")
+        
+        # Train
+        self.classifier.fit(X_train_scaled, y_train)
+        self.trained = True
+        
+        return self.classifier
+    
+    def predict(self, features: np.ndarray) -> Tuple[str, Dict[str, float]]:
+        """
+        Predict banknote denomination with confidence scores
+        
+        Returns:
+            Tuple of (predicted_denomination, confidence_scores_dict)
+        """
+        if not self.trained:
+            raise ValueError("Classifier not trained yet!")
+        
+        # Reshape if necessary
+        if features.ndim == 1:
+            features = features.reshape(1, -1)
+        
+        # Scale features
+        features_scaled = self.scaler.transform(features)
+        
+        # Predict
+        prediction = self.classifier.predict(features_scaled)[0]
+        
+        # Get probabilities for all denominations
+        if hasattr(self.classifier, 'predict_proba'):
+            probabilities = self.classifier.predict_proba(features_scaled)[0]
+            prob_dict = {}
+            for cls, prob in zip(self.classifier.classes_, probabilities):
+                prob_dict[cls] = prob
+            
+            # Ensure all denominations are present
+            for denom in self.denominations:
+                if denom not in prob_dict:
+                    prob_dict[denom] = 0.0
+        else:
+            prob_dict = {prediction: 1.0}
+        
+        # Sort by confidence
+        prob_dict = dict(sorted(prob_dict.items(), key=lambda x: x[1], reverse=True))
+        
+        return prediction, prob_dict
+    
+    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict:
+        """
+        Evaluate classifier performance
+        """
+        if not self.trained:
+            raise ValueError("Classifier not trained yet!")
+        
+        X_test_scaled = self.scaler.transform(X_test)
+        y_pred = self.classifier.predict(X_test_scaled)
+        
+        accuracy = accuracy_score(y_test, y_pred)
+        report = classification_report(y_test, y_pred, output_dict=True)
+        conf_matrix = confusion_matrix(y_test, y_pred)
         
         return {
-            'denomination': self.classes[predicted_idx],
-            'confidence': probs[predicted_idx],
-            'all_probabilities': dict(zip(self.classes, probs))
+            'accuracy': accuracy,
+            'classification_report': report,
+            'confusion_matrix': conf_matrix
         }
     
-    def match_keypoints(self, descriptors1, descriptors2, ratio_thresh=0.75):
+    def cross_validate(self, X: np.ndarray, y: np.ndarray, cv: int = 5) -> Dict:
         """
-        Match SIFT/ORB descriptors for verification
-        Returns match confidence score
+        Perform cross-validation
         """
-        if descriptors1 is None or descriptors2 is None:
-            return 0.0
+        X_scaled = self.scaler.fit_transform(X)
         
-        # Use FLANN matcher for SIFT/ORB
-        FLANN_INDEX_KDTREE = 1
-        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-        search_params = dict(checks=50)
+        scores = cross_val_score(self.classifier, X_scaled, y, cv=cv, scoring='accuracy')
         
-        flann = cv2.FlannBasedMatcher(index_params, search_params)
-        
-        try:
-            matches = flann.knnMatch(descriptors1, descriptors2, k=2)
-        except:
-            return 0.0
-        
-        # Apply ratio test
-        good_matches = []
-        for match_pair in matches:
-            if len(match_pair) == 2:
-                m, n = match_pair
-                if m.distance < ratio_thresh * n.distance:
-                    good_matches.append(m)
-        
-        # Confidence as ratio of good matches
-        confidence = len(good_matches) / min(len(descriptors1), len(descriptors2))
-        
-        return min(confidence, 1.0)
+        return {
+            'mean_accuracy': scores.mean(),
+            'std_accuracy': scores.std(),
+            'all_scores': scores
+        }
     
-    def ensemble_predict(self, feature_vector, keypoints1=None, descriptors1=None, 
-                         reference_db=None):
-        """
-        Ensemble prediction combining multiple methods
-        """
-        # Primary classification
-        primary_result = self.predict(feature_vector)
+    def save_model(self, filepath: str) -> None:
+        """Save trained model to disk"""
+        if not self.trained:
+            raise ValueError("Cannot save untrained model!")
         
-        # Keypoint matching if reference database provided
-        match_confidences = []
-        if reference_db and descriptors1 is not None:
-            for ref_class, ref_data in reference_db.items():
-                match_conf = self.match_keypoints(descriptors1, ref_data['descriptors'])
-                match_confidences.append((ref_class, match_conf))
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         
-        # Combine predictions (weighted average)
-        # (Implementation depends on your ensemble strategy)
+        model_data = {
+            'classifier': self.classifier,
+            'scaler': self.scaler,
+            'denominations': self.denominations
+        }
         
-        return primary_result
+        with open(filepath, 'wb') as f:
+            pickle.dump(model_data, f)
+        
+        print(f"Model saved to {filepath}")
+    
+    def load_model(self, filepath: str) -> None:
+        """Load trained model from disk"""
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"Model file not found: {filepath}")
+        
+        with open(filepath, 'rb') as f:
+            model_data = pickle.load(f)
+        
+        self.classifier = model_data['classifier']
+        self.scaler = model_data['scaler']
+        if 'denominations' in model_data:
+            self.denominations = model_data['denominations']
+        self.trained = True
+        
+        print(f"Model loaded from {filepath}")
