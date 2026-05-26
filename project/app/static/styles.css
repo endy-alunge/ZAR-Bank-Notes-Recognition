@@ -356,3 +356,141 @@
   .h-val { font-size: 14px; font-weight: 500; color: rgba(220,240,255,0.9); }
   .h-meta { font-size: 11px; color: rgba(150,190,255,0.45); font-family:'Space Mono',monospace; margin-top: 2px; }
   .h-badge { padding: 4px 10px; border-radius: 999px; font-size: 10px; font-family:'Space Mono',monospace; background: rgba(80,200,140,0.12); border: 1px solid rgba(80,200,140,0.20); color: rgba(140,220,180,0.8); }
+  /* Confidence Scores Card */
+.confidence-card {
+  background: rgba(10, 20, 40, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  transition: all 0.3s ease;
+}
+
+.confidence-header {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(0, 255, 136, 0.8);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.confidence-badge {
+  margin-left: auto;
+  background: rgba(0, 255, 136, 0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.confidence-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.confidence-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+}
+
+.confidence-label {
+  width: 45px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.05em;
+}
+
+.confidence-bar-container {
+  flex: 1;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.confidence-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88, #00b4d8);
+  border-radius: 8px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+}
+
+.confidence-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.confidence-percent {
+  width: 55px;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+/* Prediction highlight */
+.confidence-item.prediction .confidence-label {
+  color: #00ff88;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+}
+
+.confidence-item.prediction .confidence-percent {
+  color: #00ff88;
+  font-weight: bold;
+}
+
+.confidence-item.prediction .confidence-bar {
+  background: linear-gradient(90deg, #00ff88, #00d4a0);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .confidence-item {
+    font-size: 11px;
+    gap: 8px;
+  }
+  
+  .confidence-label {
+    width: 40px;
+  }
+  
+  .confidence-percent {
+    width: 45px;
+    font-size: 11px;
+  }
+  
+  .confidence-bar-container {
+    height: 28px;
+  }
+}

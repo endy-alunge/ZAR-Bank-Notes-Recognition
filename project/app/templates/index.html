@@ -119,53 +119,56 @@
     </div>
   </div>
 
-  <!-- Stats row -->
-  <div class="stats-row">
-    <div class="stat-card glass">
-      <div class="stat-num" id="statAcc">97.4%</div>
-      <div class="stat-label">MODEL ACCURACY</div>
+ <!-- Confidence Scores Row -->
+<div class="stats-row">
+  <div class="confidence-card glass" style="grid-column: span 3; width: 100%;">
+    <div class="confidence-header">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4-3-9s1.34-9 3-9"/>
+      </svg>
+      CONFIDENCE SCORES BY DENOMINATION
+      <span class="confidence-badge" id="topPredictionBadge">AWAITING ANALYSIS</span>
     </div>
-    <div class="stat-card glass">
-      <div class="stat-num" id="statTime">1.2s</div>
-      <div class="stat-label">AVG INFERENCE</div>
-    </div>
-    <div class="stat-card glass">
-      <div class="stat-num" id="statCount">7</div>
-      <div class="stat-label">DENOMINATIONS</div>
-    </div>
-  </div>
-
-  <!-- History -->
-  <div class="history-section">
-    <div class="history-title">RECENT DETECTIONS</div>
-    <div class="history-list">
-      <div class="history-item glass">
-        <div class="h-thumb">💴</div>
-        <div class="h-info">
-          <div class="h-val">R200 note detected</div>
-          <div class="h-meta">banknote_scan_02.jpg · 2 MIN AGO</div>
+    <div class="confidence-bars" id="confidenceBars">
+      <div class="confidence-item">
+        <div class="confidence-label">R10</div>
+        <div class="confidence-bar-container">
+          <div class="confidence-bar" style="width: 0%"></div>
         </div>
-        <div class="h-badge">98.1%</div>
+        <div class="confidence-percent">0.0%</div>
       </div>
-      <div class="history-item glass">
-        <div class="h-thumb">💵</div>
-        <div class="h-info">
-          <div class="h-val">R50 note detected</div>
-          <div class="h-meta">photo_may22.png · 14 MIN AGO</div>
+      <div class="confidence-item">
+        <div class="confidence-label">R20</div>
+        <div class="confidence-bar-container">
+          <div class="confidence-bar" style="width: 0%"></div>
         </div>
-        <div class="h-badge">95.6%</div>
+        <div class="confidence-percent">0.0%</div>
       </div>
-      <div class="history-item glass">
-        <div class="h-thumb">💶</div>
-        <div class="h-info">
-          <div class="h-val">R10 note detected</div>
-          <div class="h-meta">img_0041.jpg · 1 HR AGO</div>
+      <div class="confidence-item">
+        <div class="confidence-label">R50</div>
+        <div class="confidence-bar-container">
+          <div class="confidence-bar" style="width: 0%"></div>
         </div>
-        <div class="h-badge">99.0%</div>
+        <div class="confidence-percent">0.0%</div>
+      </div>
+      <div class="confidence-item">
+        <div class="confidence-label">R100</div>
+        <div class="confidence-bar-container">
+          <div class="confidence-bar" style="width: 0%"></div>
+        </div>
+        <div class="confidence-percent">0.0%</div>
+      </div>
+      <div class="confidence-item">
+        <div class="confidence-label">R200</div>
+        <div class="confidence-bar-container">
+          <div class="confidence-bar" style="width: 0%"></div>
+        </div>
+        <div class="confidence-percent">0.0%</div>
       </div>
     </div>
   </div>
 </div>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
