@@ -237,7 +237,7 @@ function updateConfidenceScores(confidenceScores, predictedDenomination) {
     // Update top prediction badge
     if (topPredictionBadge && predictedDenomination) {
         const topConfidence = confidenceScores[predictedDenomination];
-        topPredictionBadge.innerHTML = `🏆 TOP PREDICTION: ${predictedDenomination} (${topConfidence.toFixed(1)}%)`;
+        topPredictionBadge.innerHTML = `TOP PREDICTION: ${predictedDenomination} (${topConfidence.toFixed(1)}%)`;
         topPredictionBadge.style.animation = 'pulse 0.5s ease';
         setTimeout(() => {
             if (topPredictionBadge) topPredictionBadge.style.animation = '';
