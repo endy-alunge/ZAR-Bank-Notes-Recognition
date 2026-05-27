@@ -3,12 +3,25 @@ let currentFile = null;
 let originalImageData = null;
 let isProcessing = false;
 
+// Icon HTML definitions
+const CASH_ICON_HTML = '<img src="/static/uploads/icons8-cash-50.png" alt="Money" class="result-icon" style="width: 40px; height: 40px; object-fit: contain;">';
+const CASH_ICON_SMALL_HTML = '<img src="/static/uploads/icons8-cash-50.png" alt="Money" style="width: 24px; height: 24px; object-fit: contain;">';
+const CASH_ICON_DIMMED_HTML = '<img src="/static/uploads/icons8-cash-50.png" alt="Money" class="result-icon" style="width: 40px; height: 40px; object-fit: contain; opacity: 0.5;">';
+const CROSS_ICON_HTML = '<img src="/static/uploads/cross.png" alt="Error" class="result-icon" style="width: 40px; height: 40px; object-fit: contain;">';
+const CROSS_ICON_SMALL_HTML = '<img src="/static/uploads/cross.png" alt="Error" style="width: 24px; height: 24px; object-fit: contain;">';
+const CROSS_ICON_TINY_HTML = '<img src="/static/uploads/cross.png" alt="Error" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; margin-right: 4px;">';
+const LAMP_ICON_TINY_HTML = '<img src="/static/uploads/lamp.png" alt="Time" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; margin-right: 4px;">';
+const CHECK_ICON_TINY_HTML = '<img src="/static/uploads/check.png" alt="Check" style="width: 14px; height: 14px; object-fit: contain; vertical-align: middle; margin-right: 4px;">';
+
 // Initialize event listeners when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     updateStats();
     // Hide preview section initially
-    document.getElementById('previewSection').style.display = 'none';
+    const previewSection = document.getElementById('previewSection');
+    if (previewSection) {
+        previewSection.style.display = 'none';
+    }
     // Reset confidence scores on load
     resetConfidenceScores();
 });
@@ -36,6 +49,14 @@ function initializeEventListeners() {
                 handleFileSelect(file);
             } else {
                 showNotification('Please upload an image file', 'error');
+            }
+        });
+    }
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handleFileSelect(e.target.files[0]);
             }
         });
     }
@@ -87,33 +108,31 @@ function handleFileSelect(file) {
     reader.readAsDataURL(file);
 }
 
-function handleFile(event) {
-    const file = event.target.files[0];
-    if (file) {
-        handleFileSelect(file);
-    }
-}
-
 function resetResultBanner() {
     // Reset result banner to waiting state
     const resultIcon = document.getElementById('resultIcon');
     const resultValue = document.getElementById('resultValue');
     const resultConf = document.getElementById('resultConf');
     const metaChips = document.querySelector('.meta-chips');
+    const classIcon = document.getElementById('classIcon');
+    const classLabel = document.getElementById('classLabel');
     
-    if (resultIcon) resultIcon.textContent = '🔍';
+    // Use dimmed cash icon for waiting state
+    if (resultIcon) resultIcon.innerHTML = CASH_ICON_DIMMED_HTML;
+    if (classIcon) classIcon.innerHTML = CASH_ICON_DIMMED_HTML;
+    if (classLabel) classLabel.textContent = 'AWAITING CLASSIFICATION';
     if (resultValue) resultValue.textContent = 'Waiting for analysis';
     if (resultConf) resultConf.textContent = 'Upload an image and click analyze';
     
-    // Update meta chips
+    // Update meta chips with lamp icon for ready state
     if (metaChips) {
         metaChips.innerHTML = `
-            <div class="chip chip-blue">⏳ READY</div>
-            <div class="chip chip-green">✓ AWAITING INPUT</div>
+            <div class="chip chip-blue">${LAMP_ICON_TINY_HTML} READY</div>
+            <div class="chip chip-green">${CHECK_ICON_TINY_HTML} AWAITING INPUT</div>
         `;
     }
     
-    // Hide result banner or show with waiting state
+    // Show result banner
     const resultBanner = document.getElementById('resultBanner');
     if (resultBanner) {
         resultBanner.style.display = 'flex';
@@ -209,7 +228,7 @@ function updateStats() {
 }
 
 // ============================================
-// NEW FUNCTION: Update confidence scores display
+// FUNCTION: Update confidence scores display
 // ============================================
 function updateConfidenceScores(confidenceScores, predictedDenomination) {
     const denominations = ['R10', 'R20', 'R50', 'R100', 'R200'];
@@ -264,7 +283,7 @@ function updateConfidenceScores(confidenceScores, predictedDenomination) {
 }
 
 // ============================================
-// NEW FUNCTION: Add hash marks to confidence bars
+// FUNCTION: Add hash marks to confidence bars
 // ============================================
 function createConfidenceHashMarks() {
     const containers = document.querySelectorAll('.confidence-bar-container');
@@ -293,7 +312,7 @@ function createConfidenceHashMarks() {
 }
 
 // ============================================
-// NEW FUNCTION: Reset confidence scores to zero
+// FUNCTION: Reset confidence scores to zero
 // ============================================
 function resetConfidenceScores() {
     const denominations = ['R10', 'R20', 'R50', 'R100', 'R200'];
@@ -322,7 +341,42 @@ function resetConfidenceScores() {
 }
 
 // ============================================
-// UPDATE THIS FUNCTION: Add confidence scores update
+// FUNCTION: Show error state with red cross
+// ============================================
+function showErrorState(errorMessage) {
+    const resultValue = document.getElementById('resultValue');
+    const resultConf = document.getElementById('resultConf');
+    const resultIcon = document.getElementById('resultIcon');
+    const classIcon = document.getElementById('classIcon');
+    const classLabel = document.getElementById('classLabel');
+    const metaChips = document.querySelector('.meta-chips');
+    
+    if (resultValue) resultValue.textContent = 'Analysis Failed';
+    if (resultConf) resultConf.textContent = errorMessage || 'Unable to recognize banknote';
+    if (classLabel) classLabel.textContent = 'ERROR';
+    
+    // Use red cross icon for error state
+    if (resultIcon) resultIcon.innerHTML = CROSS_ICON_HTML;
+    if (classIcon) classIcon.innerHTML = CROSS_ICON_HTML;
+    
+    // Update meta chips with red cross icons
+    if (metaChips) {
+        metaChips.innerHTML = `
+            <div class="chip chip-blue">${CROSS_ICON_TINY_HTML} FAILED</div>
+            <div class="chip chip-green" style="background: rgba(220,53,69,0.2); color: #dc3545">
+                ${CROSS_ICON_TINY_HTML} RECOGNITION FAILED
+            </div>
+        `;
+    }
+    
+    // Reset pipeline steps
+    for (let i = 0; i <= 5; i++) {
+        updatePipelineStep(i, false);
+    }
+}
+
+// ============================================
+// FUNCTION: Update result display with cash icon and lamp icon for time
 // ============================================
 function updateResultDisplay(denomination, confidence, processingTime) {
     // Update result banner elements
@@ -333,16 +387,6 @@ function updateResultDisplay(denomination, confidence, processingTime) {
     const classLabel = document.getElementById('classLabel');
     const classIcon = document.getElementById('classIcon');
     const metaChips = document.querySelector('.meta-chips');
-    
-    const iconMap = {
-        'R10': '💵',
-        'R20': '💶', 
-        'R50': '💷',
-        'R100': '💴',
-        'R200': '💰'
-    };
-    
-    const selectedIcon = iconMap[denomination] || '💵';
     
     if (resultValue) {
         resultValue.textContent = `${denomination} note detected`;
@@ -356,23 +400,25 @@ function updateResultDisplay(denomination, confidence, processingTime) {
         resultConf.textContent = `Confidence: ${confidence.toFixed(1)}% · Model: Random Forest v1.0`;
     }
     
+    // Use cash icon for result banner
     if (resultIcon) {
-        resultIcon.textContent = selectedIcon;
+        resultIcon.innerHTML = CASH_ICON_HTML;
     }
     
     if (classLabel) {
         classLabel.textContent = denomination;
     }
     
+    // Use cash icon for classification output
     if (classIcon) {
-        classIcon.textContent = selectedIcon;
+        classIcon.innerHTML = CASH_ICON_HTML;
     }
     
     if (metaChips) {
         const confidenceLevel = confidence >= 90 ? 'HIGH' : confidence >= 70 ? 'MEDIUM' : 'LOW';
         const confidenceColor = confidence >= 90 ? 'green' : confidence >= 70 ? 'yellow' : 'orange';
         metaChips.innerHTML = `
-            <div class="chip chip-blue">⚡ ${processingTime.toFixed(1)}s</div>
+            <div class="chip chip-blue">${LAMP_ICON_TINY_HTML} ${processingTime.toFixed(1)}s</div>
             <div class="chip chip-green" style="background: ${confidenceColor === 'green' ? 'rgba(0,255,136,0.2)' : 'rgba(255,193,7,0.2)'}; color: ${confidenceColor === 'green' ? '#00ff88' : '#ffc107'}">
                 ✓ ${confidenceLevel} CONFIDENCE
             </div>
@@ -395,17 +441,12 @@ function updateResultDisplay(denomination, confidence, processingTime) {
     }
 }
 
+// ============================================
+// FUNCTION: Add to history with cash icon
+// ============================================
 function addToHistory(denomination, confidence) {
     const historyList = document.querySelector('.history-list');
     if (!historyList) return;
-    
-    const iconMap = {
-        'R10': '💵',
-        'R20': '💶',
-        'R50': '💷', 
-        'R100': '💴',
-        'R200': '💰'
-    };
     
     const now = new Date();
     const timeString = now.toLocaleTimeString();
@@ -414,7 +455,7 @@ function addToHistory(denomination, confidence) {
     newItem.className = 'history-item glass';
     newItem.style.animation = 'slideIn 0.3s ease';
     newItem.innerHTML = `
-        <div class="h-thumb">${iconMap[denomination] || '💵'}</div>
+        <div class="h-thumb">${CASH_ICON_SMALL_HTML}</div>
         <div class="h-info">
             <div class="h-val">${denomination} note detected</div>
             <div class="h-meta">analysis_${now.getTime()} · ${timeString}</div>
@@ -429,6 +470,39 @@ function addToHistory(denomination, confidence) {
     }
 }
 
+// ============================================
+// FUNCTION: Add error to history with cross icon
+// ============================================
+function addErrorToHistory(errorMessage) {
+    const historyList = document.querySelector('.history-list');
+    if (!historyList) return;
+    
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    
+    const newItem = document.createElement('div');
+    newItem.className = 'history-item glass';
+    newItem.style.animation = 'slideIn 0.3s ease';
+    newItem.style.opacity = '0.7';
+    newItem.innerHTML = `
+        <div class="h-thumb">${CROSS_ICON_SMALL_HTML}</div>
+        <div class="h-info">
+            <div class="h-val">Recognition Failed</div>
+            <div class="h-meta">error_${now.getTime()} · ${timeString}</div>
+        </div>
+        <div class="h-badge" style="background: rgba(220,53,69,0.2); color: #dc3545">${CROSS_ICON_TINY_HTML} ERROR</div>
+    `;
+    
+    historyList.insertBefore(newItem, historyList.firstChild);
+    
+    while (historyList.children.length > 5) {
+        historyList.removeChild(historyList.lastChild);
+    }
+}
+
+// ============================================
+// FUNCTION: Draw segmentation canvas
+// ============================================
 function drawSegmentationCanvas(imageData) {
     const canvas = document.getElementById('segCanvas');
     if (!canvas) return;
@@ -467,6 +541,9 @@ function drawSegmentationCanvas(imageData) {
     img.src = imageData;
 }
 
+// ============================================
+// FUNCTION: Draw feature map
+// ============================================
 function drawFeatureMap(imageData) {
     const canvas = document.getElementById('featCanvas');
     if (!canvas) return;
@@ -523,6 +600,9 @@ function drawFeatureMap(imageData) {
     img.src = imageData;
 }
 
+// ============================================
+// MAIN FUNCTION: Run analysis
+// ============================================
 async function runAnalysis() {
     if (!currentFile) {
         showNotification('Please select an image first', 'error');
@@ -603,7 +683,7 @@ async function runAnalysis() {
             
             updateResultDisplay(data.denomination, maxConfidence, processingTime);
             
-            // THIS IS THE KEY LINE - Update confidence bars with scores
+            // Update confidence bars with scores
             updateConfidenceScores(data.confidence_scores, data.denomination);
             
             showNotification(`Successfully recognized as ${data.denomination}`, 'success');
@@ -618,17 +698,12 @@ async function runAnalysis() {
         showNotification(`Error: ${error.message}`, 'error');
         updateProgress(0);
         
-        const resultValue = document.getElementById('resultValue');
-        const resultConf = document.getElementById('resultConf');
-        const resultIcon = document.getElementById('resultIcon');
+        // Show error state with red cross icon
+        showErrorState(error.message);
         
-        if (resultValue) resultValue.textContent = 'Analysis Failed';
-        if (resultConf) resultConf.textContent = error.message;
-        if (resultIcon) resultIcon.textContent = '❌';
+        // Add error to history
+        addErrorToHistory(error.message);
         
-        for (let i = 0; i <= 5; i++) {
-            updatePipelineStep(i, false);
-        }
     } finally {
         isProcessing = false;
         if (analyzeBtn) {
@@ -677,5 +752,34 @@ style.textContent = `
     .dropzone.dragover { border: 2px dashed #00ff88; background: rgba(0, 255, 136, 0.1); }
     .history-item { transition: transform 0.2s ease; }
     .history-item:hover { transform: translateX(5px); }
+    
+    /* Icon styling */
+    .result-icon {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    
+    .h-thumb img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+    
+    #resultIcon, #classIcon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 50px;
+    }
+    
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
 `;
 document.head.appendChild(style);
