@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import os
 from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier  
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -16,6 +17,7 @@ class BanknoteClassifier:
         self.scaler = StandardScaler()
         self.classifier = None
         self.trained = False
+        self.model_type = None
         self.denominations = ['R10', 'R20', 'R50', 'R100', 'R200']
     
     def train_classifier(self, X_train: np.ndarray, y_train: np.ndarray, 
@@ -33,11 +35,18 @@ class BanknoteClassifier:
         elif classifier_type == 'random_forest':
             self.classifier = RandomForestClassifier(n_estimators=100, 
                                                      random_state=42)
+        elif classifier_type == 'knn':
+            self.classifier = KNeighborsClassifier(
+             n_neighbors=5, 
+             metric='euclidean',
+             weights='distance'
+    )
         else:
             raise ValueError(f"Unknown classifier type: {classifier_type}")
         
         # Train
         self.classifier.fit(X_train_scaled, y_train)
+        self.model_type = classifier_type
         self.trained = True
         
         return self.classifier
@@ -126,7 +135,8 @@ class BanknoteClassifier:
         model_data = {
             'classifier': self.classifier,
             'scaler': self.scaler,
-            'denominations': self.denominations
+            'denominations': self.denominations,
+            'model_type': self.model_type
         }
         
         with open(filepath, 'wb') as f:
@@ -144,6 +154,7 @@ class BanknoteClassifier:
         
         self.classifier = model_data['classifier']
         self.scaler = model_data['scaler']
+        self.model_type  = model_data.get('model_type', 'unknown')
         if 'denominations' in model_data:
             self.denominations = model_data['denominations']
         self.trained = True

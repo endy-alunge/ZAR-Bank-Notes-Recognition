@@ -83,7 +83,7 @@
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       </div>
 
-      <!-- Model Selection - COMPACT VERSION -->
+      <!-- Model Selection -->
       <div class="model-card">
         <div class="model-title">ML MODEL</div>
         <select id="modelSelect" class="model-dropdown">
@@ -92,8 +92,8 @@
           <option value="knn">KNN</option>
         </select>
         <div class="model-stats" id="modelStats">
-          <span class="stat-badge" id="modelAccuracy">Acc: 98.5%</span>
-          <span class="stat-badge" id="modelSpeed">Speed: 0.8s</span>
+          <span class="stat-badge" id="modelAccuracy">Acc: —</span>
+          <span class="stat-badge" id="modelSpeed">Speed: —</span>
         </div>
       </div>
 
@@ -123,8 +123,9 @@
           <p class="header-sub">South African Rand · ZAR Detection System</p>
         </div>
         <div class="header-badges">
-          <span class="badge badge-blue">CNN v2.1</span>
-          <span class="badge badge-green">98.5% Acc.</span>
+          <!-- Updated dynamically by script.js after each prediction -->
+          <span class="badge badge-blue" id="activeModelBadge">Random Forest</span>
+          <span class="badge badge-green" id="activeAccBadge">—</span>
         </div>
       </div>
 
@@ -149,6 +150,8 @@
             <span class="result-conf" id="resultConf">—</span>
             <span class="result-time chip chip-blue" id="resultTime">—</span>
             <span class="result-auth chip chip-green" id="resultAuth">—</span>
+            <!-- Shows which model produced this result -->
+            <span class="chip chip-blue" id="resultModel">—</span>
           </div>
         </div>
       </div>
@@ -204,5 +207,51 @@
   </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+  <script>
+    // ── Model selection → badge sync ──────────────────────────────────────
+    const MODEL_LABELS = {
+      random_forest: 'Random Forest',
+      svm:           'SVM',
+      knn:           'KNN',
+    };
+
+    document.getElementById('modelSelect').addEventListener('change', function () {
+      const label = MODEL_LABELS[this.value] || this.value;
+      document.getElementById('activeModelBadge').textContent = label;
+      // Reset the accuracy badge until the next prediction
+      document.getElementById('activeAccBadge').textContent = '—';
+    });
+
+    // ── Patch analyzeBtn click to include model choice in FormData ─────────
+    // script.js builds and submits the FormData — we hook into it here so
+    // script.js itself needs zero changes. If your script.js already reads
+    // modelSelect, you can delete this block.
+    const _origFetch = window.fetch;
+    window.fetch = function (url, options) {
+      if (url === '/upload' && options && options.body instanceof FormData) {
+        const modelVal = document.getElementById('modelSelect').value;
+        options.body.set('model', modelVal);
+      }
+      return _origFetch.apply(this, arguments);
+    };
+
+    // ── Update accuracy badge after a successful prediction ───────────────
+    // Listens for a custom event dispatched by script.js (if it fires one),
+    // OR we patch JSON handling here as a fallback.
+    document.addEventListener('predictionResult', function (e) {
+      const data = e.detail;
+      if (data && data.model_used) {
+        const label = MODEL_LABELS[data.model_used] || data.model_used;
+        document.getElementById('activeModelBadge').textContent = label;
+        document.getElementById('resultModel').textContent = label;
+      }
+      if (data && data.processing_time) {
+        document.getElementById('activeAccBadge').textContent =
+          data.processing_time + 's';
+      }
+    });
+  </script>
+
 </body>
 </html>
