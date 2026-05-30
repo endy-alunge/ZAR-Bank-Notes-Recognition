@@ -1,8 +1,9 @@
-// Banknote Recognition System - Frontend JavaScript
+// Banknote Recognition System - Working Version
 let currentFile = null;
 let originalImageData = null;
 let isProcessing = false;
 
+<<<<<<< HEAD
 // Icon HTML definitions
 const CASH_ICON_HTML = '<img src="/static/uploads/icons8-cash-50.png" alt="Money" class="result-icon" style="width: 40px; height: 40px; object-fit: contain;">';
 const CASH_ICON_SMALL_HTML = '<img src="/static/uploads/icons8-cash-50.png" alt="Money" style="width: 24px; height: 24px; object-fit: contain;">';
@@ -23,32 +24,63 @@ document.addEventListener('DOMContentLoaded', function() {
         previewSection.style.display = 'none';
     }
     // Reset confidence scores on load
+=======
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+>>>>>>> Lungani-Fakazi
     resetConfidenceScores();
+    clearCanvases();
+    initializeModelDropdown();
 });
 
 function initializeEventListeners() {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
     const analyzeBtn = document.getElementById('analyzeBtn');
+    const compareBtn = document.getElementById('compareBtn');
     
+    // Click on dropzone or button triggers file input
     if (dropZone) {
+        dropZone.addEventListener('click', (e) => {
+            // Don't trigger if clicking the button (button has its own handler)
+            if (e.target !== uploadBtn && !uploadBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+        
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropZone.classList.add('dragover');
+            dropZone.style.borderColor = 'rgba(59,130,246,0.5)';
         });
         
         dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
+            dropZone.style.borderColor = 'rgba(59,130,246,0.25)';
         });
         
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('dragover');
+            dropZone.style.borderColor = 'rgba(59,130,246,0.25)';
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
                 handleFileSelect(file);
             } else {
-                showNotification('Please upload an image file', 'error');
+                showToast('Please upload an image file', 'error');
+            }
+        });
+    }
+    
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+    }
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
             }
         });
     }
@@ -64,6 +96,10 @@ function initializeEventListeners() {
     if (analyzeBtn) {
         analyzeBtn.addEventListener('click', runAnalysis);
     }
+    
+    if (compareBtn) {
+        compareBtn.addEventListener('click', compareModels);
+    }
 }
 
 function handleFileSelect(file) {
@@ -77,37 +113,31 @@ function handleFileSelect(file) {
             imgElement.src = originalImageData;
         }
         
-        // Show preview section
-        const previewSection = document.getElementById('previewSection');
-        if (previewSection) {
-            previewSection.style.display = 'block';
+        // Show preview card
+        const previewCard = document.getElementById('previewCard');
+        if (previewCard) {
+            previewCard.classList.add('visible');
         }
         
-        // Reset result banner to default/loading state
-        resetResultBanner();
-        
-        // Reset confidence scores when new image is uploaded
+        // Reset UI
+        showResultIdle();
         resetConfidenceScores();
-        
-        // Update UI
-        updatePipelineStep(0, true);
-        
-        // Reset canvases
+        resetPipeline();
         clearCanvases();
         
-        // Show notification
-        showNotification('Image uploaded successfully! Click "Analyze Banknote" to start recognition.', 'success');
+        showToast('Image uploaded successfully!', 'success');
         
-        // Enable analyze button
+        // Enable buttons
         const analyzeBtn = document.getElementById('analyzeBtn');
-        if (analyzeBtn) {
-            analyzeBtn.disabled = false;
-        }
+        const compareBtn = document.getElementById('compareBtn');
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        if (compareBtn) compareBtn.disabled = false;
     };
     
     reader.readAsDataURL(file);
 }
 
+<<<<<<< HEAD
 function resetResultBanner() {
     // Reset result banner to waiting state
     const resultIcon = document.getElementById('resultIcon');
@@ -137,48 +167,48 @@ function resetResultBanner() {
     if (resultBanner) {
         resultBanner.style.display = 'flex';
     }
+=======
+function showResultIdle() {
+    const resultIdle = document.getElementById('resultIdle');
+    const resultActive = document.getElementById('resultActive');
+    if (resultIdle) resultIdle.style.display = 'flex';
+    if (resultActive) resultActive.classList.remove('visible');
 }
 
-function clearCanvases() {
-    const segCanvas = document.getElementById('segCanvas');
-    const featCanvas = document.getElementById('featCanvas');
-    
-    if (segCanvas) {
-        const ctx1 = segCanvas.getContext('2d');
-        segCanvas.width = 300;
-        segCanvas.height = 300;
-        ctx1.clearRect(0, 0, segCanvas.width, segCanvas.height);
-        ctx1.fillStyle = 'rgba(0,10,30,0.5)';
-        ctx1.fillRect(0, 0, segCanvas.width, segCanvas.height);
-        ctx1.fillStyle = '#ffffff';
-        ctx1.font = '14px Arial';
-        ctx1.fillText('Waiting for analysis', 50, 150);
-    }
-    
-    if (featCanvas) {
-        const ctx2 = featCanvas.getContext('2d');
-        featCanvas.width = 300;
-        featCanvas.height = 300;
-        ctx2.clearRect(0, 0, featCanvas.width, featCanvas.height);
-        ctx2.fillStyle = 'rgba(0,10,30,0.5)';
-        ctx2.fillRect(0, 0, featCanvas.width, featCanvas.height);
-        ctx2.fillStyle = '#ffffff';
-        ctx2.font = '14px Arial';
-        ctx2.fillText('Features will appear here', 50, 150);
-    }
+function showResultActive() {
+    const resultIdle = document.getElementById('resultIdle');
+    const resultActive = document.getElementById('resultActive');
+    if (resultIdle) resultIdle.style.display = 'none';
+    if (resultActive) resultActive.classList.add('visible');
+>>>>>>> Lungani-Fakazi
 }
 
-function updatePipelineStep(step, isActive) {
+function resetPipeline() {
     for (let i = 0; i <= 5; i++) {
-        const dot = document.getElementById(`pd${i}`);
-        const label = document.getElementById(`pl${i}`);
-        if (dot && label) {
-            if (i <= step && isActive) {
-                dot.classList.add('active');
-                label.classList.add('active');
-            } else if (!isActive) {
+        const dot = document.getElementById(`sd${i}`);
+        const name = document.getElementById(`sn${i}`);
+        if (dot) dot.classList.remove('active', 'done');
+        if (name) name.classList.remove('active', 'done');
+    }
+    const progressFill = document.getElementById('progressFill');
+    if (progressFill) progressFill.style.width = '0%';
+}
+
+function updatePipelineStep(stepIndex) {
+    for (let i = 0; i <= stepIndex; i++) {
+        const dot = document.getElementById(`sd${i}`);
+        const name = document.getElementById(`sn${i}`);
+        if (dot && name) {
+            if (i < stepIndex) {
                 dot.classList.remove('active');
-                label.classList.remove('active');
+                dot.classList.add('done');
+                name.classList.remove('active');
+                name.classList.add('done');
+            } else if (i === stepIndex) {
+                dot.classList.remove('done');
+                dot.classList.add('active');
+                name.classList.remove('done');
+                name.classList.add('active');
             }
         }
     }
@@ -186,42 +216,22 @@ function updatePipelineStep(step, isActive) {
 
 function updateProgress(percent) {
     const progressFill = document.getElementById('progressFill');
-    if (progressFill) {
-        progressFill.style.width = `${percent}%`;
-    }
+    if (progressFill) progressFill.style.width = `${percent}%`;
 }
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        background: ${type === 'error' ? 'rgba(220,53,69,0.95)' : 'rgba(40,167,69,0.95)'};
-        color: white;
-        border-radius: 10px;
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-        font-family: 'Space Mono', monospace;
-        font-size: 13px;
-        backdrop-filter: blur(10px);
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => {
-        if (notification && notification.remove) {
-            notification.remove();
-        }
-    }, 3000);
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 
-function updateStats() {
-    const statAcc = document.getElementById('statAcc');
-    const statTime = document.getElementById('statTime');
-    const statCount = document.getElementById('statCount');
+function clearCanvases() {
+    const segCanvas = document.getElementById('segCanvas');
+    const featCanvas = document.getElementById('featCanvas');
     
+<<<<<<< HEAD
     if (statAcc) statAcc.textContent = '98.5%';
     if (statTime) statTime.textContent = '0.8s';
     if (statCount) statCount.textContent = '5';
@@ -467,6 +477,30 @@ function addToHistory(denomination, confidence) {
     
     while (historyList.children.length > 5) {
         historyList.removeChild(historyList.lastChild);
+=======
+    if (segCanvas) {
+        const ctx = segCanvas.getContext('2d');
+        segCanvas.width = segCanvas.parentElement.clientWidth;
+        segCanvas.height = segCanvas.parentElement.clientHeight;
+        ctx.fillStyle = '#0c1322';
+        ctx.fillRect(0, 0, segCanvas.width, segCanvas.height);
+        ctx.fillStyle = '#4a5568';
+        ctx.font = '10px "Space Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Awaiting analysis', segCanvas.width / 2, segCanvas.height / 2);
+    }
+    
+    if (featCanvas) {
+        const ctx = featCanvas.getContext('2d');
+        featCanvas.width = featCanvas.parentElement.clientWidth;
+        featCanvas.height = featCanvas.parentElement.clientHeight;
+        ctx.fillStyle = '#0c1322';
+        ctx.fillRect(0, 0, featCanvas.width, featCanvas.height);
+        ctx.fillStyle = '#4a5568';
+        ctx.font = '10px "Space Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Awaiting analysis', featCanvas.width / 2, featCanvas.height / 2);
+>>>>>>> Lungani-Fakazi
     }
 }
 
@@ -508,35 +542,20 @@ function drawSegmentationCanvas(imageData) {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    canvas.width = 300;
-    canvas.height = 300;
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
     
     const img = new Image();
     img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 5;
-        ctx.shadowColor = '#00ff88';
+        const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+        const x = (canvas.width - img.width * scale) / 2;
+        const y = (canvas.height - img.height * scale) / 2;
+        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
         
-        const margin = 20;
-        ctx.strokeRect(margin, margin, canvas.width - (margin * 2), canvas.height - (margin * 2));
-        
-        ctx.fillStyle = '#00ff88';
-        const cornerSize = 15;
-        ctx.fillRect(margin, margin, cornerSize, 3);
-        ctx.fillRect(margin, margin, 3, cornerSize);
-        ctx.fillRect(canvas.width - margin - cornerSize, margin, cornerSize, 3);
-        ctx.fillRect(canvas.width - margin - 3, margin, 3, cornerSize);
-        ctx.fillRect(margin, canvas.height - margin - 3, cornerSize, 3);
-        ctx.fillRect(margin, canvas.height - margin - cornerSize, 3, cornerSize);
-        ctx.fillRect(canvas.width - margin - cornerSize, canvas.height - margin - 3, cornerSize, 3);
-        ctx.fillRect(canvas.width - margin - 3, canvas.height - margin - cornerSize, 3, cornerSize);
-        
-        ctx.shadowBlur = 0;
-        ctx.font = 'bold 12px "Space Mono", monospace';
-        ctx.fillStyle = '#00ff88';
-        ctx.fillText('SEGMENTED REGION', margin, margin - 5);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        const margin = 10;
+        ctx.strokeRect(margin, margin, canvas.width - margin * 2, canvas.height - margin * 2);
     };
     img.src = imageData;
 }
@@ -549,154 +568,271 @@ function drawFeatureMap(imageData) {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    canvas.width = 300;
-    canvas.height = 300;
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
     
     const img = new Image();
     img.onload = () => {
-        ctx.globalAlpha = 0.6;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 0.5;
+        const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+        const x = (canvas.width - img.width * scale) / 2;
+        const y = (canvas.height - img.height * scale) / 2;
+        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
         ctx.globalAlpha = 1;
         
-        ctx.fillStyle = '#ff6600';
-        ctx.shadowBlur = 3;
-        ctx.shadowColor = '#ff6600';
-        
-        const features = [
-            [50, 80], [120, 60], [200, 90], [250, 150],
-            [60, 180], [150, 200], [220, 220], [180, 260],
-            [90, 250], [260, 80], [30, 200], [270, 240]
-        ];
-        
-        for (const [x, y] of features) {
+        // Draw feature points
+        ctx.fillStyle = '#f59e0b';
+        for (let i = 0; i < 12; i++) {
+            const px = 20 + Math.random() * (canvas.width - 40);
+            const py = 20 + Math.random() * (canvas.height - 40);
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.arc(px, py, 3, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.beginPath();
-            ctx.arc(x, y, 2, 0, 2 * Math.PI);
-            ctx.fillStyle = '#ffffff';
-            ctx.fill();
-            ctx.fillStyle = '#ff6600';
         }
-        
-        ctx.strokeStyle = '#ff6600';
-        ctx.lineWidth = 1.5;
-        for (const [x, y] of features) {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + 20, y - 15);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + 15, y + 20);
-            ctx.stroke();
-        }
-        
-        ctx.shadowBlur = 0;
-        ctx.font = 'bold 12px "Space Mono", monospace';
-        ctx.fillStyle = '#ff6600';
-        ctx.fillText('EXTRACTED FEATURES', 10, 25);
     };
     img.src = imageData;
 }
 
+<<<<<<< HEAD
 // ============================================
 // MAIN FUNCTION: Run analysis
 // ============================================
+=======
+// Model Dropdown Functions
+const modelDetails = {
+    'random_forest': { accuracy: '98.5%', speed: '0.8s' },
+    'svm': { accuracy: '97.2%', speed: '1.2s' },
+    'knn': { accuracy: '95.8%', speed: '0.5s' }
+};
+
+function getSelectedModel() {
+    const select = document.getElementById('modelSelect');
+    return select ? select.value : 'random_forest';
+}
+
+function updateModelInfo(model) {
+    const details = modelDetails[model] || modelDetails['random_forest'];
+    const accuracyEl = document.getElementById('modelAccuracy');
+    const speedEl = document.getElementById('modelSpeed');
+    if (accuracyEl) accuracyEl.textContent = `Acc: ${details.accuracy}`;
+    if (speedEl) speedEl.textContent = `Speed: ${details.speed}`;
+}
+
+function initializeModelDropdown() {
+    const select = document.getElementById('modelSelect');
+    if (select) {
+        select.addEventListener('change', (e) => {
+            updateModelInfo(e.target.value);
+            showToast(`Switched to ${e.target.value.toUpperCase()} model`, 'success');
+        });
+    }
+    updateModelInfo('random_forest');
+}
+
+// Confidence Functions
+function updateConfidenceScores(confidenceScores, predictedDenomination) {
+    const denominations = ['R10', 'R20', 'R50', 'R100', 'R200'];
+    const badge = document.getElementById('topPredictionBadge');
+    if (badge && predictedDenomination) {
+        badge.innerHTML = `TOP: ${predictedDenomination} (${confidenceScores[predictedDenomination].toFixed(1)}%)`;
+    }
+    
+    const items = document.querySelectorAll('.conf-item');
+    for (let i = 0; i < denominations.length && i < items.length; i++) {
+        const score = confidenceScores[denominations[i]] || 0;
+        const bar = items[i].querySelector('.conf-bar');
+        const pct = items[i].querySelector('.conf-pct');
+        if (bar) bar.style.width = `${score}%`;
+        if (pct) pct.textContent = `${score.toFixed(1)}%`;
+        if (denominations[i] === predictedDenomination) {
+            items[i].classList.add('prediction');
+        } else {
+            items[i].classList.remove('prediction');
+        }
+    }
+}
+
+function resetConfidenceScores() {
+    const badge = document.getElementById('topPredictionBadge');
+    if (badge) badge.innerHTML = 'AWAITING ANALYSIS';
+    
+    const items = document.querySelectorAll('.conf-item');
+    for (let i = 0; i < items.length; i++) {
+        const bar = items[i].querySelector('.conf-bar');
+        const pct = items[i].querySelector('.conf-pct');
+        if (bar) bar.style.width = '0%';
+        if (pct) pct.textContent = '0.0%';
+        items[i].classList.remove('prediction');
+    }
+}
+
+function updateResultDisplay(denomination, confidence, processingTime, modelUsed) {
+    showResultActive();
+    const denomEl = document.getElementById('resultDenom');
+    const confEl = document.getElementById('resultConf');
+    const timeEl = document.getElementById('resultTime');
+    const authEl = document.getElementById('resultAuth');
+    
+    const modelNames = { 'random_forest': 'Random Forest', 'svm': 'SVM', 'knn': 'KNN' };
+    const modelDisplay = modelNames[modelUsed] || modelUsed;
+    
+    if (denomEl) denomEl.textContent = `${denomination} (${modelDisplay})`;
+    if (confEl) confEl.textContent = `Confidence: ${confidence.toFixed(1)}%`;
+    if (timeEl) timeEl.textContent = `${processingTime.toFixed(2)}s`;
+    if (authEl) authEl.textContent = confidence >= 90 ? 'HIGH' : confidence >= 70 ? 'MEDIUM' : 'LOW';
+}
+
+// Compare Models
+async function compareModels() {
+    if (!currentFile) {
+        showToast('Please upload an image first', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('compareBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = 'Comparing...';
+    }
+    
+    const models = ['random_forest', 'svm', 'knn'];
+    const results = [];
+    
+    for (const model of models) {
+        const formData = new FormData();
+        formData.append('file', currentFile);
+        formData.append('model', model);
+        
+        const start = performance.now();
+        try {
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            const end = performance.now();
+            if (response.ok) {
+                const data = await response.json();
+                results.push({
+                    model: model,
+                    denomination: data.denomination,
+                    confidence: Math.max(...Object.values(data.confidence_scores)),
+                    time: (end - start) / 1000
+                });
+            }
+        } catch(e) {
+            results.push({ model: model, denomination: 'Error', confidence: 0, time: 0 });
+        }
+    }
+    
+    const modelNames = { 'random_forest': 'Random Forest', 'svm': 'SVM', 'knn': 'KNN' };
+    const html = results.map(r => `
+        <div class="comparison-item">
+            <span class="comp-model">${modelNames[r.model]}</span>
+            <span class="comp-result">${r.denomination}</span>
+            <span class="comp-conf">${r.confidence.toFixed(1)}%</span>
+            <span class="comp-time">${r.time.toFixed(2)}s</span>
+        </div>
+    `).join('');
+    
+    const modal = document.createElement('div');
+    modal.className = 'comparison-toast';
+    modal.innerHTML = `<div class="comparison-header">Model Comparison Results</div>${html}<button onclick="this.parentElement.remove()">Close</button>`;
+    document.body.appendChild(modal);
+    
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Compare Models';
+    }
+}
+
+// Main Analysis
+>>>>>>> Lungani-Fakazi
 async function runAnalysis() {
     if (!currentFile) {
-        showNotification('Please select an image first', 'error');
+        showToast('Please select an image first', 'error');
         return;
     }
-    
-    if (isProcessing) {
-        showNotification('Analysis already in progress', 'info');
-        return;
-    }
+    if (isProcessing) return;
     
     isProcessing = true;
-    const analyzeBtn = document.getElementById('analyzeBtn');
+    const btn = document.getElementById('analyzeBtn');
+    const selectedModel = getSelectedModel();
     
-    if (analyzeBtn) {
-        analyzeBtn.disabled = true;
-        analyzeBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Processing...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `Processing ${selectedModel.toUpperCase()}...`;
     }
     
     const startTime = performance.now();
     
-    const resultValue = document.getElementById('resultValue');
-    const resultConf = document.getElementById('resultConf');
-    if (resultValue) resultValue.textContent = 'Analyzing...';
-    if (resultConf) resultConf.textContent = 'Processing image through pipeline';
-    
     try {
-        updatePipelineStep(0, true);
+        updatePipelineStep(0);
         updateProgress(10);
+        await sleep(150);
         
-        updatePipelineStep(1, true);
+        updatePipelineStep(1);
         updateProgress(30);
         await sleep(200);
         
-        updatePipelineStep(2, true);
+        updatePipelineStep(2);
         updateProgress(50);
+        if (originalImageData) drawSegmentationCanvas(originalImageData);
         await sleep(200);
         
-        if (originalImageData) {
-            drawSegmentationCanvas(originalImageData);
-        }
-        
-        updatePipelineStep(3, true);
+        updatePipelineStep(3);
         updateProgress(70);
+        if (originalImageData) drawFeatureMap(originalImageData);
         await sleep(200);
         
-        if (originalImageData) {
-            drawFeatureMap(originalImageData);
-        }
-        
-        updatePipelineStep(4, true);
+        updatePipelineStep(4);
         updateProgress(85);
         
         const formData = new FormData();
         formData.append('file', currentFile);
+        formData.append('model', selectedModel);
         
-        const response = await fetch('/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        updateProgress(95);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        const response = await fetch('/upload', { method: 'POST', body: formData });
         const data = await response.json();
         
         const endTime = performance.now();
         const processingTime = (endTime - startTime) / 1000;
         
         if (data.success) {
-            updatePipelineStep(5, true);
+            updatePipelineStep(5);
             updateProgress(100);
+<<<<<<< HEAD
             
             const maxConfidence = Math.max(...Object.values(data.confidence_scores));
             
             updateResultDisplay(data.denomination, maxConfidence, processingTime);
             
             // Update confidence bars with scores
+=======
+            const maxConf = Math.max(...Object.values(data.confidence_scores));
+            updateResultDisplay(data.denomination, maxConf, processingTime, selectedModel);
+>>>>>>> Lungani-Fakazi
             updateConfidenceScores(data.confidence_scores, data.denomination);
-            
-            showNotification(`Successfully recognized as ${data.denomination}`, 'success');
+            showToast(`Recognized as ${data.denomination}`, 'success');
         } else {
             throw new Error(data.error || 'Recognition failed');
         }
         
-        setTimeout(() => updateProgress(0), 1000);
+        for (let i = 0; i <= 5; i++) {
+            const dot = document.getElementById(`sd${i}`);
+            const name = document.getElementById(`sn${i}`);
+            if (dot) {
+                dot.classList.remove('active');
+                dot.classList.add('done');
+            }
+            if (name) {
+                name.classList.remove('active');
+                name.classList.add('done');
+            }
+        }
+        
+        setTimeout(() => updateProgress(0), 1500);
         
     } catch (error) {
-        console.error('Analysis error:', error);
-        showNotification(`Error: ${error.message}`, 'error');
+        showToast(`Error: ${error.message}`, 'error');
         updateProgress(0);
+<<<<<<< HEAD
         
         // Show error state with red cross icon
         showErrorState(error.message);
@@ -704,17 +840,20 @@ async function runAnalysis() {
         // Add error to history
         addErrorToHistory(error.message);
         
+=======
+>>>>>>> Lungani-Fakazi
     } finally {
         isProcessing = false;
-        if (analyzeBtn) {
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Analyze Banknote';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Analyze Banknote';
         }
     }
 }
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+<<<<<<< HEAD
 }
 
 document.addEventListener('keydown', (e) => {
@@ -783,3 +922,6 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+=======
+}
+>>>>>>> Lungani-Fakazi
