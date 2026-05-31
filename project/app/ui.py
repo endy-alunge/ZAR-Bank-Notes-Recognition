@@ -59,45 +59,6 @@ def analyze():
 
     file.save(image_path)
 
-    # try:
-
-    #     result = analyze_banknote(
-    #         image_path=image_path,
-    #         output_dir=RESULT_FOLDER
-    #     )
-
-    #     return jsonify({
-    #         "success": True,
-
-    #         "prediction":
-    #             result["prediction"],
-
-    #         "confidence":
-    #             result["confidence"],
-
-    #         "processing_time":
-    #             result["processing_time"],
-
-    #         "original":
-    #             result["original"],
-
-    #         "segmented":
-    #             result["segmented"],
-
-    #         "features":
-    #             result["features"],
-
-    #         "authentic":
-    #             result["authentic"]
-    #     })
-
-    # except Exception as ex:
-
-    #     return jsonify({
-    #         "success": False,
-    #         "message": str(ex)
-    #     }), 500
-
 
 @app.route("/results/<filename>")
 def results(filename):
