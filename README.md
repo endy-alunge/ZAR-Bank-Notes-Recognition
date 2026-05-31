@@ -96,7 +96,7 @@ git clone https://github.com/endy-alunge/ZAR-Bank-Notes-Recognition.git
 
 ### 2. Navigate to the Project Directory
 bash
-cd ZAR-Bank-Notes-Recognition
+cd ZAR-Bank-Notes-Recognition/project
 
 ### 3. Install Dependencies
 bash
